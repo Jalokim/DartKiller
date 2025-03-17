@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+:root {
+  --dart-green: #3E8E41;
+}
+
+/* Basic styles */
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* PWA-specific styles */
+@media all and (display-mode: standalone) {
+  body {
+    /* Only apply the background color in PWA mode */
+    background-color: var(--dart-green);
+  }
+} 
