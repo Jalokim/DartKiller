@@ -1,11 +1,13 @@
 # DartKiller
 
+Entire project was created with Cursor and composer 0.46 and Claude Sonnet 3.7. The only human line is this one I wrote :)
+
 A modern web application for dart game scoring and statistics tracking. Built with Nuxt 3, Vue 3, and Tailwind CSS.
 
 ## Features
 
-- Real-time dart game scoring
-- Multiple game modes (501, Cricket, etc.)
+- Dart game scoring
+- Multiple game modes
 - Player statistics and performance tracking
 - Responsive design for mobile and desktop
 - Dark/light mode support
