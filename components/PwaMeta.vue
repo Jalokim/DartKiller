@@ -16,7 +16,7 @@ useHead({
     { name: "apple-mobile-web-app-capable", content: "yes" },
     {
       name: "apple-mobile-web-app-status-bar-style",
-      content: "black-translucent",
+      content: "#065f46",
     },
     { name: "apple-mobile-web-app-title", content: "Dart Killer" },
 

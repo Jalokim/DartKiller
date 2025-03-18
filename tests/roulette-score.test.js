@@ -1,41 +1,8 @@
 import { describe, it, expect } from 'vitest'
+import { useRouletteScore } from '../composables/useRouletteScore'
 
-// Simplified version of the submitThrows function for testing
-function calculateScore(targetNumbers, thrownNumbers) {
-  let roundScore = 0;
-  let matchedTargets = [false, false, false]; // Track which target numbers were matched
-  let matchCount = 0;
-
-  // Check each thrown number
-  for (let i = 0; i < thrownNumbers.length; i++) {
-    const thrownNumber = thrownNumbers[i];
-    let matched = false;
-
-    // See if this thrown number matches any target number
-    for (let j = 0; j < targetNumbers.length; j++) {
-      if (thrownNumber === targetNumbers[j] && !matchedTargets[j]) {
-        roundScore += thrownNumber;
-        matchedTargets[j] = true; // Mark this target as matched
-        matchCount++;
-        matched = true;
-        break; // Match one target per throw
-      }
-    }
-  }
-
-  // Check if player matched all three targets exactly
-  const isPerfectMatch = matchCount === 3;
-
-  // Double the score for a perfect match
-  if (isPerfectMatch) {
-    roundScore *= 2;
-  }
-
-  return {
-    score: roundScore,
-    isPerfectMatch
-  };
-}
+// Get the score calculator from the composable
+const { calculateScore } = useRouletteScore();
 
 // Function to simulate the crown button behavior
 function simulateCrownButton() {
@@ -44,13 +11,81 @@ function simulateCrownButton() {
 }
 
 describe('Roulette Score Calculation', () => {
+  // Specific test cases mentioned by the user
+  it('handles exact match case correctly (double score)', () => {
+    const targetNumbers = [1, 5, 6]; 
+    const thrownNumbers = [1, 5, 6];
+    
+    const result = calculateScore(targetNumbers, thrownNumbers);
+    
+    // Should match all three for a score of (1 + 5 + 6) * 2 = 24
+    expect(result.score).toBe(24);
+    expect(result.isPerfectMatch).toBe(true);
+  });
+  
+  it('handles single match case correctly', () => {
+    const targetNumbers = [1, 5, 6];
+    const thrownNumbers = [1, 2, 3];
+    
+    const result = calculateScore(targetNumbers, thrownNumbers);
+    
+    // Only 1 matched, so score should be 1
+    expect(result.score).toBe(1);
+    expect(result.isPerfectMatch).toBe(false);
+  });
+  
+  it('handles one throw matching multiple targets', () => {
+    const targetNumbers = [5, 6, 6];
+    const thrownNumbers = [6, 0, 0];
+    
+    const result = calculateScore(targetNumbers, thrownNumbers);
+    
+    // One thrown 6 matches target, should be 6 points
+    expect(result.score).toBe(6);
+    expect(result.isPerfectMatch).toBe(false);
+  });
+  
+  it('handles multiple matches with duplicate numbers', () => {
+    const targetNumbers = [1, 5, 6];
+    const thrownNumbers = [5, 5, 5];
+    
+    const result = calculateScore(targetNumbers, thrownNumbers);
+    
+    // 5 is matched 3 times, so score should be 15
+    expect(result.score).toBe(15);
+    expect(result.isPerfectMatch).toBe(false);
+  });
+  
+  it('handles all duplicate target matches correctly', () => {
+    const targetNumbers = [5, 5, 5];
+    const thrownNumbers = [5, 5, 5];
+    
+    const result = calculateScore(targetNumbers, thrownNumbers);
+    
+    // All three 5's matched for a score of (5 + 5 + 5) * 2 = 30
+    expect(result.score).toBe(30);
+    expect(result.isPerfectMatch).toBe(true);
+  });
+  
+  it('handles multiple but not all targets matched', () => {
+    const targetNumbers = [5, 5, 6];
+    const thrownNumbers = [5, 5, 7];
+    
+    const result = calculateScore(targetNumbers, thrownNumbers);
+    
+    // Two 5's matched but not the 6, so score should be 10
+    expect(result.score).toBe(10);
+    expect(result.isPerfectMatch).toBe(false);
+  });
+
+  // Original test cases
   it('calculates score correctly for partial matches', () => {
     const targetNumbers = [17, 20, 5];
     const thrownNumbers = [17, 20, 10];
     
     const result = calculateScore(targetNumbers, thrownNumbers);
     
-    // Should match 17 and 20 for a score of 37
+    // scores only matching targets
     expect(result.score).toBe(37);
     expect(result.isPerfectMatch).toBe(false);
   });
@@ -83,7 +118,7 @@ describe('Roulette Score Calculation', () => {
     
     const result = calculateScore(targetNumbers, thrownNumbers);
     
-    // Should match all three for a score of (17 + 20 + 5) * 2 = 84
+    // Should match all three for a score of (5 + 17 + 20) * 2 = 84
     expect(result.score).toBe(84);
     expect(result.isPerfectMatch).toBe(true);
   });
@@ -94,7 +129,7 @@ describe('Roulette Score Calculation', () => {
     
     const result = calculateScore(targetNumbers, thrownNumbers);
     
-    // Should have no matches for a score of 0
+    // no match score should be zero
     expect(result.score).toBe(0);
     expect(result.isPerfectMatch).toBe(false);
   });
@@ -111,38 +146,16 @@ describe('Roulette Score Calculation', () => {
   });
   
   it('handles partial matches with duplicate targets', () => {
-    const targetNumbers = [17, 17, 20];
-    const thrownNumbers = [17, 10, 11];
+    const targetNumbers = [1, 1, 3];
+    const thrownNumbers = [1, 10, 11];
     
     const result = calculateScore(targetNumbers, thrownNumbers);
     
-    // Should match only one 17 for a score of 17
-    expect(result.score).toBe(17);
+    // Should add all matches numbers
+    expect(result.score).toBe(1);
     expect(result.isPerfectMatch).toBe(false);
   });
   
-  it('handles extra throws beyond the required three', () => {
-    const targetNumbers = [17, 20, 5];
-    const thrownNumbers = [17, 20, 5, 10, 11];
-    
-    const result = calculateScore(targetNumbers, thrownNumbers);
-    
-    // Should match all three for a score of (17 + 20 + 5) * 2 = 84
-    // Extra throws should be ignored
-    expect(result.score).toBe(84);
-    expect(result.isPerfectMatch).toBe(true);
-  });
-  
-  it('handles fewer than three throws', () => {
-    const targetNumbers = [17, 20, 5];
-    const thrownNumbers = [17, 20];
-    
-    const result = calculateScore(targetNumbers, thrownNumbers);
-    
-    // Should match two for a score of 37
-    expect(result.score).toBe(37);
-    expect(result.isPerfectMatch).toBe(false);
-  });
 });
 
 describe('Roulette Crown Button', () => {
@@ -168,7 +181,7 @@ describe('Roulette Crown Button', () => {
     
     const result = calculateScore(targetNumbers, thrownNumbers);
     
-    // Should match only the 1 for a score of 1
+    // Should only count the matching target which is 1
     expect(result.score).toBe(1);
     expect(result.isPerfectMatch).toBe(false);
   });

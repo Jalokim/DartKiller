@@ -14,7 +14,12 @@ export default defineNuxtConfig({
     head: {
       htmlAttrs: {
         lang: 'en'
-      }
+      },
+      meta: [
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: '#065f46' },
+        { name: 'apple-mobile-web-app-title', content: 'Dart Killer' },
+      ]
     }
   },
   vite: {
@@ -84,5 +89,10 @@ export default defineNuxtConfig({
       enabled: true,
       type: 'module',
     },
+    includeAssets: ['pwa-icons/*.png'],
+    client: {
+      installPrompt: true,
+    },
+    registerWebManifestInRouteRules: true,
   }
 })

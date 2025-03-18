@@ -2,7 +2,7 @@
   <div class="flex flex-col overflow-hidden">
     <!-- Current player and score area -->
     <div
-      class="bg-emerald-800 text-white flex flex-col items-center relative z-10"
+      class="bg-emerald-800 text-white flex flex-col items-center relative z-20"
     >
       <!-- Player name with hearts and back button -->
       <div class="flex items-center gap-2 w-full p-4">
@@ -105,7 +105,7 @@
             </div>
 
             <!-- Right side: Action Buttons -->
-            <div class="flex flex-col gap-2">
+            <div class="flex flex-col gap-2 relative z-30">
               <!-- Conditionally show either Spin or Submit button -->
               <button
                 v-if="!gameInProgress"
@@ -143,7 +143,7 @@
 
           <!-- Throw Input Section (only shown when we have targets) -->
           <div
-            class="w-full"
+            class="w-full relative z-30"
             :class="
               gameInProgress ? 'opacity-100' : 'opacity-0 pointer-events-none'
             "
@@ -209,7 +209,7 @@
     <!-- Perfect match bonus animation -->
     <div
       v-if="showBonusAnimation"
-      class="fixed inset-0 z-40 pointer-events-none animate-bonus-bg bg-yellow-500"
+      class="fixed inset-0 z-15 pointer-events-none animate-bonus-bg bg-yellow-500"
     >
       <div class="absolute inset-0 flex items-center justify-center">
         <div class="relative">
@@ -229,7 +229,7 @@
     <!-- Score animation -->
     <div
       v-if="showScoreAnimation"
-      class="fixed inset-0 z-40 pointer-events-none animate-score-bg bg-emerald-600"
+      class="fixed inset-0 z-15 pointer-events-none animate-score-bg bg-emerald-600"
     >
       <div class="absolute inset-0 flex items-center justify-center">
         <div class="relative">
@@ -247,19 +247,50 @@
       v-if="gameOver"
       class="fixed inset-0 bg-emerald-800 bg-opacity-90 flex items-center justify-center p-4 z-50"
     >
-      <div class="bg-white rounded-lg p-6 max-w-sm w-full relative">
-        <h2 class="text-xl font-bold mb-4 text-center">Game Over!</h2>
-        <p class="text-lg text-center mb-6">{{ winner.name }} wins!</p>
+      <div class="bg-white rounded-lg p-6 max-w-md w-full relative z-60">
+        <h2 class="text-2xl font-bold mb-2 text-center">Game Over!</h2>
+
+        <!-- Winner section with big score -->
+        <div class="mb-6 text-center">
+          <div class="text-lg font-bold text-emerald-700">Winner</div>
+          <div class="text-xl">{{ winner.name }}</div>
+          <div class="text-4xl font-bold text-emerald-600 mt-1">
+            {{ winner.score }}
+          </div>
+        </div>
+
+        <!-- Runner ups -->
+        <div v-if="sortedRunnerUps.length > 0" class="mb-6">
+          <div class="text-lg font-bold mb-2 text-center">Runner Ups</div>
+          <div class="bg-gray-50 rounded-lg p-2">
+            <div
+              v-for="(player, index) in sortedRunnerUps"
+              :key="player.name"
+              class="flex items-center py-2 border-b last:border-b-0 border-gray-200"
+            >
+              <div
+                class="w-7 h-7 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center font-bold mr-3"
+              >
+                {{ index + 2 }}
+              </div>
+              <div>{{ player.name }}</div>
+              <div class="ml-auto font-bold">
+                {{ player.score }}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="flex justify-center gap-4">
           <button
             @click="backToHome"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold z-70"
           >
             Back to Home
           </button>
           <button
             @click="restartGame"
-            class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-bold"
+            class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-bold z-70"
           >
             Restart Game
           </button>
@@ -288,10 +319,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import ConfettiExplosion from "vue-confetti-explosion";
 import { useScoreSpeech } from "../composables/useScoreSpeech";
+import { useRouletteScore } from "../composables/useRouletteScore";
 
 const router = useRouter();
 const rotation = ref(0);
@@ -300,8 +332,9 @@ const selectedField = ref(null);
 const dartboardRef = ref(null);
 const finalDegree = ref(null);
 
-// Initialize the speech composable
+// Initialize the composables
 const { speak, speakScore } = useScoreSpeech();
+const { calculateScore } = useRouletteScore();
 
 // Players and game state
 const players = ref([]);
@@ -376,6 +409,15 @@ const canSubmit = computed(() => {
 
 const allThrowsComplete = computed(() => {
   return currentThrowIndex.value >= 3;
+});
+
+// Computed property for sorted runner ups
+const sortedRunnerUps = computed(() => {
+  if (!winner.value || players.value.length <= 1) return [];
+
+  return [...players.value]
+    .filter((player) => player.name !== winner.value.name)
+    .sort((a, b) => b.score - a.score);
 });
 
 // Load players from localStorage
@@ -506,39 +548,18 @@ function undoThrow() {
 }
 
 function submitThrows() {
-  // Calculate score based on matching numbers
-  let roundScore = 0;
-  let matchedTargets = [false, false, false]; // Track which target numbers were matched
-  let matchCount = 0;
-
-  // Check each thrown number
-  for (let i = 0; i < currentThrowIndex.value; i++) {
-    const thrownNumber = thrownNumbers.value[i];
-    let matched = false;
-
-    // See if this thrown number matches any target number
-    for (let j = 0; j < targetNumbers.value.length; j++) {
-      if (thrownNumber === targetNumbers.value[j] && !matchedTargets[j]) {
-        roundScore += thrownNumber;
-        matchedTargets[j] = true; // Mark this target as matched
-        matchCount++;
-        matched = true;
-        break; // Match one target per throw
-      }
-    }
-  }
-
-  // Check if player matched all three targets exactly
-  // This requires all 3 target numbers to be matched
-  const isPerfectMatch = matchCount === 3;
+  // Calculate score using the composable
+  const result = calculateScore(
+    targetNumbers.value,
+    thrownNumbers.value.slice(0, currentThrowIndex.value)
+  );
 
   // Double the score for a perfect match
-  if (isPerfectMatch) {
-    roundScore *= 2;
+  if (result.isPerfectMatch) {
     // Set the animation score before playing the bonus animation
-    animationScore.value = roundScore;
+    animationScore.value = result.score;
     // Add round score to player's total score
-    currentPlayer.value.score += roundScore;
+    currentPlayer.value.score += result.score;
 
     // Check if player has reached the target
     if (currentPlayer.value.score >= targetToReach.value) {
@@ -550,7 +571,7 @@ function submitThrows() {
     playBonusAnimation();
   } else {
     // Add round score to player's total score
-    currentPlayer.value.score += roundScore;
+    currentPlayer.value.score += result.score;
 
     // Check if player has reached the target
     if (currentPlayer.value.score >= targetToReach.value) {
@@ -559,7 +580,7 @@ function submitThrows() {
     }
 
     // Show score animation for non-perfect matches
-    animationScore.value = roundScore;
+    animationScore.value = result.score;
     playScoreAnimation();
   }
 }
@@ -608,6 +629,9 @@ function handleWin() {
   // Set winner and show game over screen
   winner.value = currentPlayer.value;
   gameOver.value = true;
+
+  // Cancel any ongoing game processes
+  clearAllTimeouts();
 }
 
 function shufflePlayers() {
@@ -682,6 +706,36 @@ function loseLife() {
   // "Lose life" button - fills all throws with zeros
   thrownNumbers.value = [0, 0, 0]; // Fill all three throws with zeros
   currentThrowIndex.value = 3; // Mark all throws as complete
+}
+
+// Watch for game over state to cancel any ongoing game processes
+watch(gameOver, (isGameOver) => {
+  if (isGameOver) {
+    // Cancel any ongoing animations or game processes
+    showBonusAnimation.value = false;
+    showScoreAnimation.value = false;
+    isSpinning.value = false;
+    gameInProgress.value = false;
+
+    // Clear any pending timeouts
+    clearAllTimeouts();
+  }
+});
+
+// Function to clear all timeouts
+function clearAllTimeouts() {
+  // Get the highest timeout id
+  const highestTimeoutId = setTimeout(() => {}, 0);
+
+  // Clear all timeouts
+  for (let i = 0; i < highestTimeoutId; i++) {
+    clearTimeout(i);
+  }
+}
+
+function restartGame() {
+  resetGame();
+  gameOver.value = false;
 }
 </script>
 
@@ -831,5 +885,22 @@ function loseLife() {
 
 .animate-score-text {
   animation: score-text 1.2s ease-in-out forwards;
+}
+
+/* Add z-index utility classes */
+.z-15 {
+  z-index: 15;
+}
+
+.z-30 {
+  z-index: 30;
+}
+
+.z-60 {
+  z-index: 60;
+}
+
+.z-70 {
+  z-index: 70;
 }
 </style>
