@@ -195,24 +195,29 @@
           </button>
         </div>
       </div>
-      <ConfettiExplosion
-        class="absolute inset-0 z-10"
-        :particleCount="130"
-        :particleSize="30"
-        :force="0.5"
-        :stageWidth="1600"
-        :stageHeight="1600"
-        :colors="[
-          '#26a69a',
-          '#00897b',
-          '#00796b',
-          '#00695c',
-          '#004d40',
-          '#ffffff',
-          '#e0f2f1',
-          '#b2dfdb',
-        ]"
-      />
+      <div
+        class="absolute inset-0 z-10 pointer-events-none flex items-center justify-center"
+      >
+        <ConfettiExplosion
+          :particleCount="130"
+          :particleSize="30"
+          :force="0.5"
+          :duration="3000"
+          :stageWidth="440"
+          :stageHeight="1000"
+          :shouldDestroyAfterDone="false"
+          :colors="[
+            '#26a69a',
+            '#00897b',
+            '#00796b',
+            '#00695c',
+            '#004d40',
+            '#ffffff',
+            '#e0f2f1',
+            '#b2dfdb',
+          ]"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -410,7 +415,6 @@ async function playHeartLossAnimation(lastLife = false) {
 
 // Confirm the current score
 async function confirmScore(specialMessage) {
-  console.log(speechSynthesis.getVoices());
   if (!canConfirmScore.value) return;
 
   // Save current state to history before making changes

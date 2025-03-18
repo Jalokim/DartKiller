@@ -25,6 +25,13 @@
     <div class="flex-grow flex flex-col items-center justify-center p-6">
       <div class="max-w-md w-full space-y-6">
         <button
+          @click="navigateToClassic"
+          class="w-full bg-purple-600 hover:bg-purple-700 text-white py-4 rounded-lg text-xl font-bold shadow-md transition-colors touch-manipulation"
+        >
+          Classic Game
+        </button>
+
+        <button
           @click="navigateToKiller"
           class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-lg text-xl font-bold shadow-md transition-colors touch-manipulation"
         >
@@ -48,6 +55,10 @@ import { ref, onMounted } from "vue";
 
 const router = useRouter();
 const isAppInstalled = ref(false);
+
+function navigateToClassic() {
+  router.push("/classic-config");
+}
 
 function navigateToKiller() {
   router.push("/killer-config");
