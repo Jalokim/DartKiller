@@ -106,49 +106,6 @@
     <!-- Add spacer to prevent content from being hidden under fixed controls -->
     <div class="h-[55vh]"></div>
 
-    <!-- Player order overlay -->
-    <div
-      v-if="showPlayerOrderOverlay"
-      class="fixed inset-0 z-50 bg-emerald-800 animate-player-order-overlay"
-    >
-      <div
-        class="absolute inset-0 flex flex-col items-center justify-center p-6"
-      >
-        <h2 class="text-white text-3xl font-bold mb-6">Player Order</h2>
-        <div class="bg-white rounded-lg p-4 w-full max-w-sm">
-          <div
-            v-for="(player, index) in players"
-            :key="player.name"
-            class="flex items-center py-2 border-b last:border-b-0 border-gray-200"
-          >
-            <div
-              class="w-8 h-8 rounded-full text-white flex items-center justify-center font-bold mr-3"
-              :class="
-                currentPlayerIndex === index ? 'bg-emerald-600' : 'bg-gray-400'
-              "
-            >
-              {{ index + 1 }}
-            </div>
-            <div
-              class="font-medium"
-              :class="currentPlayerIndex === index ? 'text-emerald-600' : ''"
-            >
-              {{ player.name }}
-            </div>
-            <div class="ml-auto font-bold">
-              {{ player.score }}
-            </div>
-          </div>
-        </div>
-        <button
-          @click="showPlayerOrderOverlay = false"
-          class="mt-6 px-6 py-2 bg-white rounded-full text-emerald-800 font-bold"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-
     <!-- Win animation -->
     <div
       v-if="showWinAnimation"
@@ -203,12 +160,10 @@
     <!-- Bust animation -->
     <div
       v-if="showBustAnimation"
-      class="fixed inset-0 z-40 pointer-events-none"
+      class="fixed inset-0 z-40 bg-red-600 animate-bust-bg pointer-events-none"
     >
-      <div
-        class="absolute inset-0 flex bg-red-600 items-center justify-center animate-pulse"
-      >
-        <div class="text-white text-7xl font-bold">BUST!</div>
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="text-white text-7xl font-bold animate-bust-text">BUST!</div>
       </div>
     </div>
 
@@ -244,12 +199,10 @@ const gameFinished = ref(false);
 // Current turn tracking
 const scores = ref([null, null, null]);
 const multiplier = ref(1);
-const showPlayerOrderOverlay = ref(false);
 const showWinAnimation = ref(false);
 const showBustAnimation = ref(false);
 const showScoreAnimation = ref(false);
 const winner = ref(null);
-const scoreAnimationTrigger = ref(false);
 const animationScore = ref(0);
 
 // Computed properties
@@ -327,7 +280,7 @@ const canUndo = computed(() => {
 
 // Checkout suggestions for common scores
 const checkoutHint = computed(() => {
-  const score = currentPlayer.value.score;
+  const score = currentPlayer.value.score - currentTurnTotal.value;
 
   // Common checkout patterns
   const checkouts = {
@@ -706,9 +659,6 @@ function smartUndo() {
 
     // Save the game state
     saveGameState();
-
-    // Announce the undo
-    speak("Previous turn undone");
   }
 }
 
@@ -851,7 +801,7 @@ function isGameWon() {
 function winGame() {
   gameFinished.value = true;
   winner.value = { ...currentPlayer.value };
-  speak(`${currentPlayer.value.name} wins!`);
+  speak(`Game Over`);
   showWinAnimation.value = true;
   saveGameState();
 }
@@ -917,7 +867,7 @@ function skipTurn() {
   scores.value = [0, 0, 0];
 
   // Speak a message
-  speak("Turn skipped");
+  speak("Triple Zero!");
 
   // Process the turn
   setTimeout(() => {
@@ -927,10 +877,6 @@ function skipTurn() {
 </script>
 
 <style>
-.animate-player-order-overlay {
-  animation: fadeIn 0.2s ease-out;
-}
-
 .animate-bust-bg {
   animation: pulseBg 1.2s ease-in-out;
 }
@@ -949,15 +895,6 @@ function skipTurn() {
 
 .animate-score-text {
   animation: scoreText 1.2s ease-in-out forwards;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
 }
 
 @keyframes pulseBg {

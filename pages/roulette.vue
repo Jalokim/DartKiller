@@ -247,7 +247,7 @@
       v-if="gameOver"
       class="fixed inset-0 bg-emerald-800 bg-opacity-90 flex items-center justify-center p-4 z-50"
     >
-      <div class="bg-white rounded-lg p-6 max-w-md w-full relative z-60">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full relative z-30">
         <h2 class="text-2xl font-bold mb-2 text-center">Game Over!</h2>
 
         <!-- Winner section with big score -->
@@ -297,7 +297,7 @@
         </div>
       </div>
       <div
-        class="absolute inset-0 z-10 pointer-events-none flex items-center justify-center"
+        class="absolute inset-0 z-50 pointer-events-none flex items-center justify-center"
       >
         <ConfettiExplosion
           :particleCount="130"
